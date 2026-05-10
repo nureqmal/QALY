@@ -74,17 +74,17 @@ with st.sidebar:
 
 # Page routing
 if page == "🏠 Dashboard":
-    from modules import dashboard
+    from module import dashboard
     dashboard.show(user)
 elif page == "📦 Sales Tracker":
-    from modules import sales
+    from module import sales
     sales.show()
 elif page == "✍️ AI Content Studio":
-    from modules import content
+    from module import content
     content.show()
 elif page == "📊 Market Intel":
-    from modules import market
+    from module import market
     market.show()
 elif page == "👥 Team Hub":
-    from modules import team
+    from module import team
     team.show()
