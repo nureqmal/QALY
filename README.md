@@ -36,7 +36,7 @@ streamlit run app.py
 qaly_os/
 ├── app.py              # Main app + navigation
 ├── requirements.txt
-├── modules/
+├── pages/
 │   ├── dashboard.py    # Home dashboard
 │   ├── sales.py        # Sales tracker
 │   ├── content.py      # AI content studio
