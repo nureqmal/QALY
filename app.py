@@ -74,7 +74,7 @@ with st.sidebar:
 
 # Page routing
 if page == "🏠 Dashboard":
-    from modules import dashboard
+    from pages import dashboard
     dashboard.show(user)
 elif page == "📦 Sales Tracker":
     from pages import sales
