@@ -88,11 +88,14 @@ def show():
             saved_map = cfg.get("col_map", {})
             with st.expander("Column mapping"):
                 c1,c2,c3,c4,c5 = st.columns(5)
-                with c1: cn = st.selectbox("Name",      cols, index=cols.index(saved_map.get("name",cols[0]))      if saved_map.get("name") in cols else 0, key="cn")
-                with c2: cp = st.selectbox("Product",   cols, index=cols.index(saved_map.get("product",cols[0]))   if saved_map.get("product") in cols else 0, key="cp")
-                with c3: cq = st.selectbox("Quantity",  cols, index=cols.index(saved_map.get("qty",cols[0]))       if saved_map.get("qty") in cols else 0, key="cq")
-                with c4: cc = st.selectbox("Channel",   cols, index=cols.index(saved_map.get("channel",cols[0]))   if saved_map.get("channel") in cols else 0, key="cc")
-                with c5: cd = st.selectbox("Timestamp", cols, index=cols.index(saved_map.get("date",cols[0]))      if saved_map.get("date") in cols else 0, key="cd")
+                def safe_idx(key):
+                    v = saved_map.get(key)
+                    return cols.index(v) if v in cols else 0
+                with c1: cn = st.selectbox("Name",      cols, index=safe_idx("name"),    key="cn")
+                with c2: cp = st.selectbox("Product",   cols, index=safe_idx("product"), key="cp")
+                with c3: cq = st.selectbox("Quantity",  cols, index=safe_idx("qty"),     key="cq")
+                with c4: cc = st.selectbox("Channel",   cols, index=safe_idx("channel"), key="cc")
+                with c5: cd = st.selectbox("Timestamp", cols, index=safe_idx("date"),    key="cd")
                 if st.button("Save mapping"):
                     cfg["col_map"] = {"name":cn,"product":cp,"qty":cq,"channel":cc,"date":cd}
                     save_dict("config.json", cfg)
@@ -108,7 +111,12 @@ def show():
             ] if c and c in df.columns]
 
             show_df = df[display_cols] if display_cols else df
-            show_df = show_df.sort_values(show_df.columns[0], ascending=False) if len(show_df.columns) > 0 else show_df
+            try:
+                sort_col = show_df.columns[0]
+                if show_df.columns.tolist().count(sort_col) == 1:
+                    show_df = show_df.sort_values(sort_col, ascending=False)
+            except Exception:
+                pass
             st.dataframe(show_df, use_container_width=True, hide_index=True)
         else:
             st.info("No responses found. Make sure the sheet is published and has data.")
