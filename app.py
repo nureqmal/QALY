@@ -1,8 +1,8 @@
 import streamlit as st
 
-st.set_modules_config(
-    modules_title="Qaly OS",
-    modules_icon="🧪",
+st.set_page_config(
+    page_title="Qaly OS",
+    page_icon="🧪",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -51,8 +51,8 @@ with st.sidebar:
     st.divider()
 
     st.markdown("**Navigate**")
-    modules = st.selectbox(
-        "modules",
+    page = st.selectbox(
+        "Module",
         ["🏠 Dashboard", "📦 Sales Tracker", "✍️ AI Content Studio", "📊 Market Intel", "👥 Team Hub"],
         label_visibility="collapsed"
     )
@@ -72,19 +72,19 @@ with st.sidebar:
         else:
             st.info("Add API key to unlock AI features")
 
-# modules routing
-if modules == "🏠 Dashboard":
-    from modules import dashboard
+# Page routing
+if page == "🏠 Dashboard":
+    from pages import dashboard
     dashboard.show(user)
-elif modules == "📦 Sales Tracker":
-    from modules import sales
+elif page == "📦 Sales Tracker":
+    from pages import sales
     sales.show()
-elif modules == "✍️ AI Content Studio":
-    from modules import content
+elif page == "✍️ AI Content Studio":
+    from pages import content
     content.show()
-elif modules == "📊 Market Intel":
-    from modules import market
+elif page == "📊 Market Intel":
+    from pages import market
     market.show()
-elif modules == "👥 Team Hub":
-    from modules import team
+elif page == "👥 Team Hub":
+    from pages import team
     team.show()
