@@ -167,7 +167,7 @@ def show():
 
         edit_tab, new_tab = st.tabs(["Edit existing formula", "Add new formula"])
 
-        with edit_tab:
+        with st.expander("Edit existing formula", expanded=True):
             edit_formula_name = st.selectbox("Formula to edit", list(saved_formulas.keys()), key="edit_fname")
             edit_formula      = saved_formulas.get(edit_formula_name, [])
 
@@ -206,7 +206,7 @@ def show():
                     else:
                         st.error("Ingredient name and amount required.")
 
-        with new_tab:
+        with st.expander("Add new formula"):
             with st.form("new_formula_form", clear_on_submit=True):
                 new_fname = st.text_input("Formula name *", placeholder="e.g. Kimya Special Edition")
                 st.markdown(f"<div style='font-size:12px;color:{C['TEXT2']};margin:6px 0;'>You can add ingredients after creating the formula.</div>", unsafe_allow_html=True)
