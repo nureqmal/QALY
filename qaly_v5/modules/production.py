@@ -165,7 +165,7 @@ def show():
         st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
         st.markdown(f"<div style='font-size:14px;font-weight:600;color:{C['TEXT']};margin-bottom:8px;'>Manage Formulas</div>", unsafe_allow_html=True)
 
-        edit_tab, new_tab = st.tabs(["Edit existing formula", "Add new formula"])
+        
 
         with st.expander("Edit existing formula", expanded=True):
             edit_formula_name = st.selectbox("Formula to edit", list(saved_formulas.keys()), key="edit_fname")
