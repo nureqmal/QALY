@@ -86,8 +86,13 @@ def show():
                     st.markdown("<br>", unsafe_allow_html=True)
                     col_a, col_b, col_c = st.columns(3)
                     with col_a:
-                        new_remaining = st.number_input("Update units remaining", min_value=0, max_value=produced,
-                                                        value=remaining_b, key=f"rem_{b['id']}")
+                        new_remaining = st.number_input(
+                            "Update units remaining",
+                            min_value=0,
+                            max_value=max(produced, 1),  # fix: avoid max_value=0
+                            value=remaining_b,
+                            key=f"rem_{b['id']}"
+                        )
                     with col_b:
                         new_status = st.selectbox("Update status", PROD_STATUSES,
                                                   index=PROD_STATUSES.index(b.get("status","Active")),
@@ -112,127 +117,131 @@ def show():
     with tab2:
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # ── Formula Calculator (at the top of New Batch tab) ──
+        # ── Section header ──
+        st.markdown(f"<div style='font-size:16px;font-weight:700;color:{C['TEXT']};margin-bottom:4px;'>🧪 Formula Calculator</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:12px;color:{C['TEXT2']};margin-bottom:16px;'>Kira bahan-bahan sebelum mula batch baru</div>", unsafe_allow_html=True)
+
+        # Load formulas
         saved_formulas = load("formulas.json")
         if not saved_formulas or isinstance(saved_formulas, list):
             saved_formulas = DEFAULT_FORMULAS
             save("formulas.json", saved_formulas)
 
-        with st.expander("🧪 Formula Calculator", expanded=False):
-            col_left, col_right = st.columns([1, 2])
-            with col_left:
-                st.markdown(f"<div style='font-size:14px;font-weight:600;color:{C['TEXT']};margin-bottom:12px;'>Calculator</div>", unsafe_allow_html=True)
-                formula_names    = list(saved_formulas.keys())
-                selected_formula = st.selectbox("Select formula", formula_names, key="calc_formula")
-                target_volume    = st.number_input("Target volume (Litres)", min_value=0.1, value=1.0, step=0.5, key="calc_vol")
-                bottles_estimate = int(target_volume * 1000 / 100)
-                st.markdown(f"""
-                <div class="qcard qcard-accent" style="padding:10px 14px;margin-top:.5rem;">
-                    <div style="font-size:12px;color:{C['TEXT2']};margin-bottom:4px;">Scaling factor</div>
-                    <div style="font-size:22px;font-weight:800;color:{C['ACCENT']};letter-spacing:-.02em;">{target_volume:.1f}x</div>
-                    <div style="font-size:11px;color:{C['TEXT3']};margin-top:2px;">Base formula is per 1L</div>
-                </div>
-                <div class="qcard" style="padding:10px 14px;margin-top:8px;">
-                    <div style="font-size:12px;color:{C['TEXT2']};margin-bottom:4px;">Est. bottles (100ml each)</div>
-                    <div style="font-size:22px;font-weight:800;color:{C['TEXT']};letter-spacing:-.02em;">{bottles_estimate} units</div>
-                </div>
-                """, unsafe_allow_html=True)
-            with col_right:
-                st.markdown(f"<div style='font-size:14px;font-weight:600;color:{C['TEXT']};margin-bottom:12px;'>Ingredients for {target_volume:.1f}L</div>", unsafe_allow_html=True)
-                formula = saved_formulas.get(selected_formula, [])
-                colors  = ["#7c6fea","#4ade80","#f472b6","#60a5fa","#fbbf24","#a99eff","#34d399"]
-                if formula:
-                    total_all = max(sum(x["amount"] for x in formula), 1)
-                    for i, ing in enumerate(formula):
-                        scaled = ing["amount"] * target_volume
-                        color  = colors[i % len(colors)]
-                        note   = f" — {ing['note']}" if ing.get("note") else ""
-                        pct    = ing["amount"] / total_all * 100
-                        st.markdown(f"""
-                        <div class="qcard" style="padding:10px 16px;margin-bottom:6px;">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                                <div>
-                                    <span style="font-size:13px;font-weight:600;color:{C['TEXT']};">{ing['ingredient']}</span>
-                                    <span style="font-size:11px;color:{C['TEXT3']};margin-left:8px;">{pct:.1f}%{note}</span>
-                                </div>
-                                <span style="font-size:16px;font-weight:800;color:{color};">{scaled:.1f} {ing['unit']}</span>
-                            </div>
-                            <div style="background:{C['BORDER']};border-radius:99px;height:5px;">
-                                <div style="background:{color};width:{pct:.0f}%;height:5px;border-radius:99px;"></div>
-                            </div>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    excl_water = sum(ing["amount"] * target_volume for ing in formula if ing["ingredient"] != "Distilled Water")
+        # Calculator
+        col_left, col_right = st.columns([1, 2])
+        with col_left:
+            formula_names    = list(saved_formulas.keys())
+            selected_formula = st.selectbox("Select formula", formula_names, key="calc_formula")
+            target_volume    = st.number_input("Target volume (Litres)", min_value=0.1, value=1.0, step=0.5, key="calc_vol")
+            bottles_estimate = int(target_volume * 1000 / 100)
+            st.markdown(f"""
+            <div class="qcard qcard-accent" style="padding:10px 14px;margin-top:.5rem;">
+                <div style="font-size:12px;color:{C['TEXT2']};margin-bottom:4px;">Scaling factor</div>
+                <div style="font-size:22px;font-weight:800;color:{C['ACCENT']};letter-spacing:-.02em;">{target_volume:.1f}x</div>
+                <div style="font-size:11px;color:{C['TEXT3']};margin-top:2px;">Base formula is per 1L</div>
+            </div>
+            <div class="qcard" style="padding:10px 14px;margin-top:8px;">
+                <div style="font-size:12px;color:{C['TEXT2']};margin-bottom:4px;">Est. bottles (100ml each)</div>
+                <div style="font-size:22px;font-weight:800;color:{C['TEXT']};letter-spacing:-.02em;">{bottles_estimate} units</div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_right:
+            st.markdown(f"<div style='font-size:14px;font-weight:600;color:{C['TEXT']};margin-bottom:12px;'>Ingredients for {target_volume:.1f}L</div>", unsafe_allow_html=True)
+            formula = saved_formulas.get(selected_formula, [])
+            colors  = ["#7c6fea","#4ade80","#f472b6","#60a5fa","#fbbf24","#a99eff","#34d399"]
+            if formula:
+                total_all = max(sum(x["amount"] for x in formula), 1)
+                for i, ing in enumerate(formula):
+                    scaled = ing["amount"] * target_volume
+                    color  = colors[i % len(colors)]
+                    note   = f" — {ing['note']}" if ing.get("note") else ""
+                    pct    = ing["amount"] / total_all * 100
                     st.markdown(f"""
-                    <div class="qcard qcard-accent" style="padding:10px 16px;margin-top:4px;">
-                        <div style="font-size:12px;color:{C['TEXT2']};">Total measured (excl. top-up water)</div>
-                        <div style="font-size:16px;font-weight:700;color:{C['ACCENT']};">{excl_water:.1f} g/ml</div>
+                    <div class="qcard" style="padding:10px 16px;margin-bottom:6px;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                            <div>
+                                <span style="font-size:13px;font-weight:600;color:{C['TEXT']};">{ing['ingredient']}</span>
+                                <span style="font-size:11px;color:{C['TEXT3']};margin-left:8px;">{pct:.1f}%{note}</span>
+                            </div>
+                            <span style="font-size:16px;font-weight:800;color:{color};">{scaled:.1f} {ing['unit']}</span>
+                        </div>
+                        <div style="background:{C['BORDER']};border-radius:99px;height:5px;">
+                            <div style="background:{color};width:{pct:.0f}%;height:5px;border-radius:99px;"></div>
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
-                else:
-                    st.info("No ingredients in this formula.")
+                excl_water = sum(ing["amount"] * target_volume for ing in formula if ing["ingredient"] != "Distilled Water")
+                st.markdown(f"""
+                <div class="qcard qcard-accent" style="padding:10px 16px;margin-top:4px;">
+                    <div style="font-size:12px;color:{C['TEXT2']};">Total measured (excl. top-up water)</div>
+                    <div style="font-size:16px;font-weight:700;color:{C['ACCENT']};">{excl_water:.1f} g/ml</div>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.info("No ingredients in this formula.")
 
-            st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-            st.markdown(f"<div style='font-size:14px;font-weight:600;color:{C['TEXT']};margin-bottom:8px;'>Manage Formulas</div>", unsafe_allow_html=True)
+        # Manage Formulas
+        st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:14px;font-weight:600;color:{C['TEXT']};margin-bottom:8px;'>Manage Formulas</div>", unsafe_allow_html=True)
 
-            with st.expander("Edit existing formula", expanded=False):
-                edit_formula_name = st.selectbox("Formula to edit", list(saved_formulas.keys()), key="edit_fname")
-                edit_formula      = saved_formulas.get(edit_formula_name, [])
-                if edit_formula:
-                    st.markdown(f"<div style='font-size:12px;color:{C['TEXT2']};margin-bottom:8px;'>Current ingredients (per 1L)</div>", unsafe_allow_html=True)
-                    for idx, ing in enumerate(edit_formula):
-                        c1, c2, c3, c4 = st.columns([3, 1, 1, 1])
-                        with c1: st.markdown(f"<div style='padding:8px 0;font-size:13px;color:{C['TEXT']};'>{ing['ingredient']}</div>", unsafe_allow_html=True)
-                        with c2: st.markdown(f"<div style='padding:8px 0;font-size:13px;color:{C['ACCENT']};font-weight:600;'>{ing['amount']} {ing['unit']}</div>", unsafe_allow_html=True)
-                        with c3: st.markdown(f"<div style='padding:8px 0;font-size:11px;color:{C['TEXT3']};'>{ing.get('note','')}</div>", unsafe_allow_html=True)
-                        with c4:
-                            if st.button("Remove", key=f"rem_ing_{edit_formula_name}_{idx}", use_container_width=True):
-                                saved_formulas[edit_formula_name] = [x for j, x in enumerate(edit_formula) if j != idx]
-                                save("formulas.json", saved_formulas)
-                                st.rerun()
-                st.markdown(f"<div style='font-size:12px;color:{C['TEXT2']};margin:12px 0 8px;'>Add ingredient</div>", unsafe_allow_html=True)
-                with st.form("add_ing_form", clear_on_submit=True):
-                    c1, c2, c3, c4 = st.columns([3, 1.5, 1, 2])
-                    with c1: ing_name   = st.text_input("Ingredient")
-                    with c2: ing_amount = st.number_input("Amount/L", min_value=0.0, step=0.1)
-                    with c3: ing_unit   = st.selectbox("Unit", ["g","ml","drop"])
-                    with c4: ing_note   = st.text_input("Note (optional)")
-                    if st.form_submit_button("Add Ingredient", use_container_width=True):
-                        if ing_name.strip() and ing_amount > 0:
-                            new_ing = {"ingredient": ing_name.strip(), "amount": ing_amount, "unit": ing_unit}
-                            if ing_note.strip():
-                                new_ing["note"] = ing_note.strip()
-                            saved_formulas.setdefault(edit_formula_name, []).append(new_ing)
+        with st.expander("Edit existing formula", expanded=False):
+            edit_formula_name = st.selectbox("Formula to edit", list(saved_formulas.keys()), key="edit_fname")
+            edit_formula      = saved_formulas.get(edit_formula_name, [])
+            if edit_formula:
+                st.markdown(f"<div style='font-size:12px;color:{C['TEXT2']};margin-bottom:8px;'>Current ingredients (per 1L)</div>", unsafe_allow_html=True)
+                for idx, ing in enumerate(edit_formula):
+                    c1, c2, c3, c4 = st.columns([3, 1, 1, 1])
+                    with c1: st.markdown(f"<div style='padding:8px 0;font-size:13px;color:{C['TEXT']};'>{ing['ingredient']}</div>", unsafe_allow_html=True)
+                    with c2: st.markdown(f"<div style='padding:8px 0;font-size:13px;color:{C['ACCENT']};font-weight:600;'>{ing['amount']} {ing['unit']}</div>", unsafe_allow_html=True)
+                    with c3: st.markdown(f"<div style='padding:8px 0;font-size:11px;color:{C['TEXT3']};'>{ing.get('note','')}</div>", unsafe_allow_html=True)
+                    with c4:
+                        if st.button("Remove", key=f"rem_ing_{edit_formula_name}_{idx}", use_container_width=True):
+                            saved_formulas[edit_formula_name] = [x for j, x in enumerate(edit_formula) if j != idx]
                             save("formulas.json", saved_formulas)
-                            st.success("Added!")
                             st.rerun()
-                        else:
-                            st.error("Name and amount required.")
+            st.markdown(f"<div style='font-size:12px;color:{C['TEXT2']};margin:12px 0 8px;'>Add ingredient</div>", unsafe_allow_html=True)
+            with st.form("add_ing_form", clear_on_submit=True):
+                c1, c2, c3, c4 = st.columns([3, 1.5, 1, 2])
+                with c1: ing_name   = st.text_input("Ingredient")
+                with c2: ing_amount = st.number_input("Amount/L", min_value=0.0, step=0.1)
+                with c3: ing_unit   = st.selectbox("Unit", ["g","ml","drop"])
+                with c4: ing_note   = st.text_input("Note (optional)")
+                if st.form_submit_button("Add Ingredient", use_container_width=True):
+                    if ing_name.strip() and ing_amount > 0:
+                        new_ing = {"ingredient": ing_name.strip(), "amount": ing_amount, "unit": ing_unit}
+                        if ing_note.strip():
+                            new_ing["note"] = ing_note.strip()
+                        saved_formulas.setdefault(edit_formula_name, []).append(new_ing)
+                        save("formulas.json", saved_formulas)
+                        st.success("Added!")
+                        st.rerun()
+                    else:
+                        st.error("Name and amount required.")
 
-            with st.expander("Add new formula"):
-                with st.form("new_formula_form", clear_on_submit=True):
-                    new_fname = st.text_input("Formula name *", placeholder="e.g. Kimya Special Edition")
-                    if st.form_submit_button("Create Formula", use_container_width=True):
-                        if new_fname.strip():
-                            if new_fname.strip() in saved_formulas:
-                                st.error("Name already exists.")
-                            else:
-                                saved_formulas[new_fname.strip()] = []
-                                save("formulas.json", saved_formulas)
-                                st.success(f"'{new_fname}' created!")
-                                st.rerun()
+        with st.expander("Add new formula"):
+            with st.form("new_formula_form", clear_on_submit=True):
+                new_fname = st.text_input("Formula name *", placeholder="e.g. Kimya Special Edition")
+                if st.form_submit_button("Create Formula", use_container_width=True):
+                    if new_fname.strip():
+                        if new_fname.strip() in saved_formulas:
+                            st.error("Name already exists.")
                         else:
-                            st.error("Name required.")
+                            saved_formulas[new_fname.strip()] = []
+                            save("formulas.json", saved_formulas)
+                            st.success(f"'{new_fname}' created!")
+                            st.rerun()
+                    else:
+                        st.error("Name required.")
 
-            col_rst, _ = st.columns([1, 3])
-            with col_rst:
-                if st.button("Reset to default formulas", use_container_width=True):
-                    save("formulas.json", DEFAULT_FORMULAS)
-                    st.rerun()
+        col_rst, _ = st.columns([1, 3])
+        with col_rst:
+            if st.button("Reset to default formulas", use_container_width=True):
+                save("formulas.json", DEFAULT_FORMULAS)
+                st.rerun()
 
         # ── New Batch Form ──
         st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-        st.markdown(f"<div style='font-size:14px;font-weight:600;color:{C['TEXT']};margin-bottom:8px;'>Record New Batch</div>", unsafe_allow_html=True)
+        st.markdown(f"<div style='font-size:16px;font-weight:700;color:{C['TEXT']};margin-bottom:16px;'>📋 Record New Batch</div>", unsafe_allow_html=True)
         with st.form("prod_form", clear_on_submit=True):
             col1, col2 = st.columns(2)
             with col1:
